@@ -11,6 +11,7 @@ Minimal multi-agent A2A starter project.
 - `main.py`: root entrypoint
   - `serve` mode: runs orchestrator server
   - `ask` mode: sends one question to orchestrator as a client
+- `ui_app/streamlit_app.py`: minimal chat frontend for interacting with the orchestrator
 
 ## Quick start
 
@@ -45,6 +46,23 @@ uv run --env-file orchestrator_agent/.env python -m orchestrator_agent.main
 ```bash
 uv run --env-file .env python main.py ask "How will my day look if I am a cancer?"
 ```
+
+6. Run chat UI (optional)
+
+```bash
+uv run --env-file .env streamlit run ui_app/streamlit_app.py
+```
+
+## One-command startup
+
+Start all four backend services in one terminal:
+
+```bash
+./scripts/start_all.sh
+```
+
+This starts `web_search_agent`, `astrology_agent`, `tarot_agent`, and `orchestrator_agent`.
+Logs are written under `logs/`.
 
 ## Env vars
 

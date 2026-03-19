@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 class OrchestratorAgent:
     def __init__(self) -> None:
-        remote_timeout = float(os.getenv("ORCHESTRATOR_REMOTE_TIMEOUT", "180"))
+        remote_timeout = float(os.getenv("ORCHESTRATOR_REMOTE_TIMEOUT", "1800"))
         astrology_base_url = os.getenv(
             "ASTROLOGY_AGENT_URL",
             "http://127.0.0.1:8001",
