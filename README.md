@@ -6,6 +6,7 @@ Minimal multi-agent A2A starter project.
 
 - `web_search_agent`: A2A agent with LangChain + DuckDuckGo tool.
 - `astrology_agent`: A2A agent with synthetic astrology tools.
+- `tarot_agent`: A2A streaming tarot agent with delayed card-by-card reveals.
 - `orchestrator_agent`: Google ADK agent that orchestrates remote A2A sub-agents.
 - `main.py`: root entrypoint
   - `serve` mode: runs orchestrator server
@@ -27,13 +28,19 @@ uv run --env-file web_search_agent/.env python -m web_search_agent.main
 uv run --env-file astrology_agent/.env python -m astrology_agent.main
 ```
 
-3. Orchestrator (port `8010`)
+3. Tarot agent (port `8002`)
+
+```bash
+uv run --env-file tarot_agent/.env python -m tarot_agent.main
+```
+
+4. Orchestrator (port `8010`)
 
 ```bash
 uv run --env-file orchestrator_agent/.env python -m orchestrator_agent.main
 ```
 
-4. Ask orchestrator from root
+5. Ask orchestrator from root
 
 ```bash
 uv run --env-file .env python main.py ask "How will my day look if I am a cancer?"
@@ -51,6 +58,7 @@ Orchestrator:
 - `ORCHESTRATOR_MODEL` (default `openai/gpt-5`)
 - `ASTROLOGY_AGENT_URL` (default `http://127.0.0.1:8001`)
 - `WEB_SEARCH_AGENT_URL` (default `http://127.0.0.1:8000`)
+- `TAROT_AGENT_URL` (default `http://127.0.0.1:8002`)
 
 Web search:
 

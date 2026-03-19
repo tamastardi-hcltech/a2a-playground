@@ -18,11 +18,13 @@ A2A_PORT=8010 uv run --env-file .env python -m orchestrator_agent.main
 
 - `WEB_SEARCH_AGENT_URL` (default `http://127.0.0.1:8000`)
 - `ASTROLOGY_AGENT_URL` (default `http://127.0.0.1:8001`)
+- `TAROT_AGENT_URL` (default `http://127.0.0.1:8002`)
 
 Example:
 
 ```bash
 WEB_SEARCH_AGENT_URL=http://127.0.0.1:8000 \
 ASTROLOGY_AGENT_URL=http://127.0.0.1:8001 \
+TAROT_AGENT_URL=http://127.0.0.1:8002 \
 uv run --env-file .env python -m orchestrator_agent.main
 ```
