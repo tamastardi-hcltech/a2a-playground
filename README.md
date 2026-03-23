@@ -12,6 +12,7 @@ Minimal multi-agent A2A starter project.
   - `serve` mode: runs orchestrator server
   - `ask` mode: sends one question to orchestrator as a client
 - `ui_app/streamlit_app.py`: minimal chat frontend for interacting with the orchestrator
+  - supports A2A `input-required` follow-up for missing astrology birth date
 
 ## Quick start
 
