@@ -1,0 +1,131 @@
+services:
+  web_search_agent:
+    build:
+      context: ./web_search_agent
+      dockerfile: Dockerfile
+    container_name: web_search_agent
+    command: python -m web_search_agent.main
+    env_file:
+      - ./.env
+      - ./web_search_agent/.env
+    environment:
+      A2A_HOST: 0.0.0.0
+      A2A_PORT: 8000
+      A2A_AGENT_URL: http://web_search_agent:8000
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/.well-known/agent-card.json', timeout=3).read()\"",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    ports:
+      - "8000:8000"
+
+  astrology_agent:
+    build:
+      context: ./astrology_agent
+      dockerfile: Dockerfile
+    container_name: astrology_agent
+    command: python -m astrology_agent.main
+    env_file:
+      - ./.env
+      - ./astrology_agent/.env
+    environment:
+      A2A_HOST: 0.0.0.0
+      A2A_PORT: 8001
+      A2A_AGENT_URL: http://astrology_agent:8001
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/.well-known/agent-card.json', timeout=3).read()\"",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    ports:
+      - "8001:8001"
+
+  tarot_agent:
+    build:
+      context: ./tarot_agent
+      dockerfile: Dockerfile
+    container_name: tarot_agent
+    command: python -m tarot_agent.main
+    env_file:
+      - ./.env
+      - ./tarot_agent/.env
+    environment:
+      A2A_HOST: 0.0.0.0
+      A2A_PORT: 8002
+      A2A_AGENT_URL: http://tarot_agent:8002
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8002/.well-known/agent-card.json', timeout=3).read()\"",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    ports:
+      - "8002:8002"
+
+  orchestrator_agent:
+    build:
+      context: ./orchestrator_agent
+      dockerfile: Dockerfile
+    container_name: orchestrator_agent
+    command: python -m orchestrator_agent.main
+    env_file:
+      - ./.env
+      - ./orchestrator_agent/.env
+    environment:
+      A2A_HOST: 0.0.0.0
+      A2A_PORT: 8010
+      A2A_AGENT_URL: http://orchestrator_agent:8010
+      WEB_SEARCH_AGENT_URL: http://web_search_agent:8000
+      ASTROLOGY_AGENT_URL: http://astrology_agent:8001
+      TAROT_AGENT_URL: http://tarot_agent:8002
+    depends_on:
+      web_search_agent:
+        condition: service_healthy
+      astrology_agent:
+        condition: service_healthy
+      tarot_agent:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8010/.well-known/agent-card.json', timeout=3).read()\"",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 10s
+    ports:
+      - "8010:8010"
+
+  oracle_ui:
+    build:
+      context: ./ui_app
+      dockerfile: Dockerfile
+    container_name: oracle_ui
+    command: streamlit run ui_app/streamlit_app.py --server.address=0.0.0.0 --server.port=8501
+    env_file:
+      - ./.env
+    environment:
+      ORCHESTRATOR_AGENT_URL: http://orchestrator_agent:8010
+      ORCHESTRATOR_TIMEOUT: "120"
+    depends_on:
+      orchestrator_agent:
+        condition: service_healthy
+    ports:
+      - "8501:8501"

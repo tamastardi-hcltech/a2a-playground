@@ -47,9 +47,9 @@ def _extract_required_fields(task: Task) -> list[dict]:
 
 
 async def _ask_orchestrator_async(
-    question: str,
-    task_id: str | None = None,
-    context_id: str | None = None,
+        question: str,
+        task_id: str | None = None,
+        context_id: str | None = None,
 ) -> dict:
     orchestrator_url = os.getenv("ORCHESTRATOR_AGENT_URL", "http://127.0.0.1:8010")
     timeout_s = float(os.getenv("ORCHESTRATOR_TIMEOUT", "45"))
@@ -111,9 +111,9 @@ async def _ask_orchestrator_async(
 
 
 def ask_orchestrator(
-    question: str,
-    task_id: str | None = None,
-    context_id: str | None = None,
+        question: str,
+        task_id: str | None = None,
+        context_id: str | None = None,
 ) -> dict:
     return asyncio.run(
         _ask_orchestrator_async(
@@ -147,6 +147,10 @@ user_text = st.chat_input(
     disabled=has_pending_inputs,
 )
 if user_text:
+    if not st.session_state.required_fields:
+        st.session_state.task_id = None
+        st.session_state.context_id = None
+
     st.session_state.messages.append({"role": "user", "content": user_text})
     with st.chat_message("user"):
         st.markdown(user_text)

@@ -65,6 +65,30 @@ Start all four backend services in one terminal:
 This starts `web_search_agent`, `astrology_agent`, `tarot_agent`, and `orchestrator_agent`.
 Logs are written under `logs/`.
 
+## Docker Compose
+
+Run everything (all agents + Streamlit UI):
+
+```bash
+docker compose up --build
+```
+
+Each service is built from its own Dockerfile (`<service>/Dockerfile`) to simulate separate deployments.
+
+Endpoints:
+
+- Web search agent: `http://127.0.0.1:8000`
+- Astrology agent: `http://127.0.0.1:8001`
+- Tarot agent: `http://127.0.0.1:8002`
+- Orchestrator: `http://127.0.0.1:8010`
+- UI: `http://127.0.0.1:8501`
+
+Stop and remove containers:
+
+```bash
+docker compose down
+```
+
 ## Env vars
 
 Common:
