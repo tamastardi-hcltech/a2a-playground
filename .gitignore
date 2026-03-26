@@ -172,6 +172,15 @@ cover/
 *.mo
 *.pot
 
+### Node / Angular ###
+node_modules/
+dist/
+.angular/
+.cache/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
 # Django stuff:
 *.log
 local_settings.py

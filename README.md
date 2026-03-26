@@ -13,6 +13,8 @@ Minimal multi-agent A2A starter project.
   - `ask` mode: sends one question to orchestrator as a client
 - `ui_app/streamlit_app.py`: minimal chat frontend for interacting with the orchestrator
   - supports A2A `input-required` follow-up for missing astrology birth date
+- `angular/`: alternative Angular chat frontend with the same A2A capabilities
+  - same chat flow, task continuity, progress updates, and follow-up input
 
 ## Quick start
 
@@ -48,10 +50,18 @@ uv run --env-file orchestrator_agent/.env python -m orchestrator_agent.main
 uv run --env-file .env python main.py ask "How will my day look if I am a cancer?"
 ```
 
-6. Run chat UI (optional)
+6. Run Streamlit chat UI (optional)
 
 ```bash
 uv run --env-file .env streamlit run ui_app/streamlit_app.py
+```
+
+7. Run Angular chat UI (optional)
+
+```bash
+cd angular
+npm install
+npm start
 ```
 
 ## One-command startup
@@ -67,7 +77,7 @@ Logs are written under `logs/`.
 
 ## Docker Compose
 
-Run everything (all agents + Streamlit UI):
+Run everything (all agents + both UIs):
 
 ```bash
 docker compose up --build
@@ -75,13 +85,14 @@ docker compose up --build
 
 Each service is built from its own Dockerfile (`<service>/Dockerfile`) to simulate separate deployments.
 
-Endpoints:
+Endpoints (see `docker-compose.yml` for the full list and ports):
 
 - Web search agent: `http://127.0.0.1:8000`
 - Astrology agent: `http://127.0.0.1:8001`
 - Tarot agent: `http://127.0.0.1:8002`
 - Orchestrator: `http://127.0.0.1:8010`
-- UI: `http://127.0.0.1:8501`
+- Streamlit UI: `http://127.0.0.1:8501`
+- Angular UI: `http://127.0.0.1:8502`
 
 Stop and remove containers:
 
@@ -139,6 +150,7 @@ This repo is meant to show the A2A task lifecycle across separate services.
 - The tarot agent emits multiple `working` updates, one per card reveal, before its final `completed` message.
 - The orchestrator can emit `input-required` when astrology is selected and it needs a birth date that was not already provided.
 - The Streamlit UI shows the collected task progress in an "A2A task progress" section for each reply.
+- The Angular UI mirrors the same task lifecycle and follow-up flow for side-by-side comparison.
 
 ## Notes
 

@@ -129,3 +129,14 @@ services:
         condition: service_healthy
     ports:
       - "8501:8501"
+
+  oracle_ui_angular:
+    build:
+      context: ./angular
+      dockerfile: Dockerfile
+    container_name: oracle_ui_angular
+    depends_on:
+      orchestrator_agent:
+        condition: service_healthy
+    ports:
+      - "8502:80"

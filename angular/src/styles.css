@@ -1,0 +1,39 @@
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  color-scheme: dark;
+  --bg: #050810;
+  --bg-alt: #0c1220;
+  --panel: rgba(12, 18, 31, 0.86);
+  --panel-strong: rgba(18, 27, 45, 0.92);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(134, 168, 255, 0.28);
+  --text: #eef2ff;
+  --muted: #a7b0c4;
+  --accent: #86a8ff;
+  --accent-2: #b8c9ff;
+  --danger: #ff99a8;
+  --shadow: 0 28px 70px rgba(0, 0, 0, 0.36);
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(134, 168, 255, 0.12), transparent 28%),
+    radial-gradient(circle at 82% 10%, rgba(142, 179, 255, 0.1), transparent 20%),
+    linear-gradient(180deg, #050710 0%, var(--bg) 48%, #04060b 100%);
+  color: var(--text);
+}
+
+button,
+textarea {
+  font-family: inherit;
+}

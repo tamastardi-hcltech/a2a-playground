@@ -1,0 +1,196 @@
+<main class="shell">
+  <aside class="rail">
+    <div class="brand">
+      <p class="eyebrow">Angular frontend</p>
+      <h1>Agent Console</h1>
+      <p class="lede">
+        A browser-native companion for the same A2A flow, with task continuity,
+        progress updates, and follow-up input when the backend needs more detail.
+      </p>
+    </div>
+
+    <div class="status-strip">
+      <span class="pill" [class.warn]="loading || requiredFields.length > 0" [class.ok]="!loading && !requiredFields.length">
+        {{ statusLabel }}
+      </span>
+      <button class="ghost-button" type="button" (click)="resetConversation()">Reset</button>
+    </div>
+
+    <div class="rail-divider"></div>
+
+    <dl class="meta-grid">
+      <div>
+        <dt>Task</dt>
+        <dd>{{ taskId || 'new conversation' }}</dd>
+      </div>
+      <div>
+        <dt>Context</dt>
+        <dd>{{ contextId || 'new conversation' }}</dd>
+      </div>
+      <div>
+        <dt>Turns</dt>
+        <dd>{{ messages.length }}</dd>
+      </div>
+      <div>
+        <dt>Inputs</dt>
+        <dd>{{ requiredFields.length }}</dd>
+      </div>
+    </dl>
+
+    <section class="inspector">
+      <div class="section-head">
+        <p class="eyebrow">Inputs</p>
+        <h2>Required fields</h2>
+      </div>
+
+      <div class="input-summary" *ngIf="requiredFields.length > 0">
+        <div class="summary-row">
+          <span class="summary-label">Progress</span>
+          <span class="summary-value">
+            {{ requiredFieldsCompletedCount }} of {{ requiredFields.length }} filled
+          </span>
+        </div>
+        <div class="summary-track" aria-hidden="true">
+          <span [style.width.%]="requiredFieldsProgress"></span>
+        </div>
+        <p class="summary-note" *ngIf="requiredFieldsMissingLabels.length">
+          Missing: {{ requiredFieldsMissingLabels.join(', ') }}
+        </p>
+        <div class="summary-chips">
+          <span
+            class="summary-chip"
+            *ngFor="let field of requiredFields"
+            [class.done]="!isRequiredFieldMissing(field.id)"
+            [class.todo]="isRequiredFieldMissing(field.id)"
+          >
+            {{ field.label }}
+          </span>
+        </div>
+      </div>
+
+      <p class="muted" *ngIf="!requiredFields.length">
+        No extra inputs are needed right now. The backend will ask if it needs a birth date.
+      </p>
+
+      <form class="required-form" *ngIf="requiredFields.length > 0" (ngSubmit)="submitRequiredFields()">
+        <label
+          class="field"
+          *ngFor="let field of requiredFields"
+          [for]="field.id"
+          [class.missing]="errorMessage && isRequiredFieldMissing(field.id)"
+        >
+          <span>{{ field.label }}</span>
+          <input
+            [id]="field.id"
+            [name]="field.id"
+            type="text"
+            [(ngModel)]="requiredFieldValues[field.id]"
+            (input)="clearError()"
+            (keydown.enter)="onRequiredFieldKeydown($event)"
+            [placeholder]="field.example || field.format || field.label"
+            autocomplete="off"
+          />
+          <small *ngIf="field.format">{{ field.format }}</small>
+        </label>
+
+        <button class="primary-button" type="submit" [disabled]="loading">
+          {{ loading ? 'Resuming...' : 'Send required input' }}
+        </button>
+
+        <p class="hint">
+          Press Enter to submit this block. The first missing field will be focused automatically.
+        </p>
+      </form>
+    </section>
+
+    <section class="inspector" *ngIf="errorMessage">
+      <div class="section-head">
+        <p class="eyebrow">Signal</p>
+        <h2>Last error</h2>
+      </div>
+      <p class="error-copy">{{ errorMessage }}</p>
+    </section>
+  </aside>
+
+  <section class="workspace">
+    <header class="workspace-header">
+      <div>
+        <p class="eyebrow">Conversation</p>
+        <h2>Task thread</h2>
+      </div>
+      <p class="workspace-note">
+        Ask one question at a time. The task and context stay linked across follow-ups.
+      </p>
+    </header>
+
+    <div class="workspace-rule"></div>
+
+    <div class="thread" [class.empty]="conversationEmpty">
+      <div class="empty-state" *ngIf="conversationEmpty">
+        <h3>Start a task</h3>
+        <p>
+          Send a question and the backend will decide which agents should answer it.
+        </p>
+      </div>
+
+      <article
+        class="message"
+        *ngFor="let message of messages"
+        [class.user]="message.role === 'user'"
+        [class.assistant]="message.role === 'assistant'"
+        [class.thinking]="message.role === 'thinking'"
+      >
+        <div class="bubble">
+          <div class="message-meta">
+            <span class="message-role">{{ roleLabel(message.role) }}</span>
+            <span *ngIf="message.state" class="message-state">{{ message.state }}</span>
+          </div>
+
+          <p class="message-text">{{ message.content }}</p>
+
+          <div class="thinking-live" *ngIf="message.role === 'thinking' && message.active">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+
+          <ol *ngIf="message.role === 'thinking' && message.progressUpdates?.length" class="thinking-steps">
+            <li *ngFor="let update of message.progressUpdates">{{ update }}</li>
+          </ol>
+        </div>
+      </article>
+    </div>
+
+    <form class="composer" (ngSubmit)="submitQuestion()">
+      <div class="composer-head">
+        <label for="question">Ask a question</label>
+        <span class="composer-hint">Enter to send, Shift+Enter for a line break</span>
+      </div>
+      <div class="composer-grid">
+        <textarea
+          id="question"
+          name="question"
+          rows="4"
+          [(ngModel)]="draftQuestion"
+          (keydown)="onQuestionKeydown($event)"
+          [disabled]="loading || requiredFields.length > 0"
+          placeholder="How will my day look if I am a cancer?"
+        ></textarea>
+        <button
+          class="primary-button send-button"
+          type="submit"
+          [disabled]="loading || !draftQuestion.trim() || requiredFields.length > 0"
+        >
+          {{ loading ? 'Consulting...' : 'Send' }}
+        </button>
+      </div>
+
+      <p class="hint" *ngIf="requiredFields.length">
+        Finish the required input block on the left before sending a new question.
+      </p>
+      <p class="hint" *ngIf="!requiredFields.length">
+        The task and context stay linked when you continue the thread.
+      </p>
+    </form>
+  </section>
+</main>
