@@ -1,5 +1,6 @@
 import os
 import random
+from hashlib import sha256
 
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
@@ -57,11 +58,15 @@ class TarotAgent:
             temperature=float(os.getenv("TAROT_TEMPERATURE", "1.1")),
         )
 
-    def draw_next_tarot_card(self) -> str:
-        return random.choice(self.deck)
+    def build_rng(self, query: str) -> random.Random:
+        seed = sha256(query.strip().lower().encode("utf-8")).hexdigest()
+        return random.Random(seed)
 
-    def draw_random_card(self) -> str:
-        return self.draw_next_tarot_card()
+    def draw_next_tarot_card(self, rng: random.Random) -> str:
+        return rng.choice(self.deck)
+
+    def draw_random_card(self, rng: random.Random) -> str:
+        return self.draw_next_tarot_card(rng)
 
     def interpret_card(
         self,

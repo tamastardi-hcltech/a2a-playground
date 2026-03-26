@@ -70,6 +70,7 @@ async def _ask_orchestrator_async(
             "task_id": task_id,
             "context_id": context_id,
             "required_fields": [],
+            "progress_updates": [],
         }
         async for event in client.send_message(message):
             candidate = _extract_text(event)
@@ -82,6 +83,9 @@ async def _ask_orchestrator_async(
                 result["context_id"] = task.context_id
                 result["state"] = task.status.state.value
                 result["required_fields"] = _extract_required_fields(task)
+                if task.status.state == TaskState.working and candidate:
+                    if candidate not in result["progress_updates"]:
+                        result["progress_updates"].append(candidate)
 
         if not result["text"]:
             result["text"] = "No response text returned."
@@ -96,6 +100,7 @@ async def _ask_orchestrator_async(
             "task_id": task_id,
             "context_id": context_id,
             "required_fields": [],
+            "progress_updates": [],
         }
     except Exception as exc:
         return {
@@ -104,6 +109,7 @@ async def _ask_orchestrator_async(
             "task_id": task_id,
             "context_id": context_id,
             "required_fields": [],
+            "progress_updates": [],
         }
     finally:
         await client.close()
@@ -162,6 +168,10 @@ if user_text:
                 task_id=st.session_state.task_id,
                 context_id=st.session_state.context_id,
             )
+        if result["progress_updates"]:
+            with st.expander("A2A task progress", expanded=False):
+                for update in result["progress_updates"]:
+                    st.markdown(f"- {update}")
         st.markdown(result["text"])
 
     st.session_state.messages.append({"role": "assistant", "content": result["text"]})
@@ -202,6 +212,10 @@ if st.session_state.required_fields:
                         task_id=st.session_state.task_id,
                         context_id=st.session_state.context_id,
                     )
+                if result["progress_updates"]:
+                    with st.expander("A2A task progress", expanded=False):
+                        for update in result["progress_updates"]:
+                            st.markdown(f"- {update}")
                 st.markdown(result["text"])
             st.session_state.messages.append({"role": "assistant", "content": result["text"]})
             st.session_state.task_id = result["task_id"]

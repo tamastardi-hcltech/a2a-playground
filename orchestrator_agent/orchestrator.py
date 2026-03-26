@@ -27,25 +27,21 @@ class OrchestratorAgent:
             "http://127.0.0.1:8002",
         ).rstrip("/")
 
-        self.astrology_card_url = f"{astrology_base_url}/.well-known/agent-card.json"
-        self.search_card_url = f"{search_base_url}/.well-known/agent-card.json"
-        self.tarot_card_url = f"{tarot_base_url}/.well-known/agent-card.json"
-
         astrology_remote = RemoteA2aAgent(
             name="astrology_remote",
-            agent_card=self.astrology_card_url,
+            agent_card=f"{astrology_base_url}/.well-known/agent-card.json",
             description="Remote astrology A2A agent",
             timeout=remote_timeout,
         )
         search_remote = RemoteA2aAgent(
             name="web_search_remote",
-            agent_card=self.search_card_url,
+            agent_card=f"{search_base_url}/.well-known/agent-card.json",
             description="Remote web search A2A agent",
             timeout=remote_timeout,
         )
         tarot_remote = RemoteA2aAgent(
             name="tarot_stream_remote",
-            agent_card=self.tarot_card_url,
+            agent_card=f"{tarot_base_url}/.well-known/agent-card.json",
             description="Remote tarot streaming A2A agent",
             timeout=remote_timeout,
         )
@@ -54,23 +50,27 @@ class OrchestratorAgent:
             name="orchestrator_coordinator",
             model=os.getenv("ORCHESTRATOR_MODEL", "openai/gpt-5"),
             instruction=(
-                "You are the All-Seeing Oracle, a coordinating intelligence that reaches into remote agents.\n"
-                "You must consult your full toolkit before your final answer.\n"
-                "Required workflow for each user request:\n"
-                "1. Call astrology_remote at least once.\n"
-                "2. Call web_search_remote at least once.\n"
-                "3. Call tarot_stream_remote at least once.\n"
-                "4. If needed, call any remote agent additional times to refine or cross-check signals.\n"
-                "5. Synthesize all gathered signals into one coherent oracle answer.\n"
-                "If any tool fails or times out, continue with the remaining tools and explicitly note what was unavailable.\n"
-                "Persona and style:\n"
-                "- Mystical, ambiguous, and evocative, but still understandable.\n"
-                "- Speak in plain text only.\n"
-                "- Never output JSON or schema blocks.\n"
-                "- If signals conflict, acknowledge the tension instead of forcing certainty.\n"
-                "- Do not skip tools unless they are unavailable.\n"
-                "- Use follow-up tool calls when the question is ambiguous, underspecified, or evidence is thin.\n"
-                "- Do not provide a final answer before tool calls are attempted."
+                "You are the All-Seeing Oracle, a coordinating intelligence that can consult remote A2A agents.\n"
+                "Available tools:\n"
+                "- astrology_remote: zodiac signs, horoscopes, birth-date based readings, astrology framing\n"
+                "- web_search_remote: current facts, external information, release notes, web-backed questions\n"
+                "- tarot_stream_remote: tarot, reflective guidance, intuitive pattern-finding, divination-style questions\n"
+                "Use only the tools that genuinely help with the user's request. Do not call every tool by default.\n"
+                "If a request is clearly factual, prefer web_search_remote.\n"
+                "If a request is astrology-specific, use astrology_remote.\n"
+                "If a request is reflective or explicitly tarot-oriented, use tarot_stream_remote.\n"
+                "For mixed requests, you may call multiple relevant tools.\n"
+                "If a tool fails or times out, continue with the remaining tools and note the missing signal.\n"
+                "Your final answer must be plain text and structured like this:\n"
+                "Consulted agents:\n"
+                "- <agent>: <why it was used>\n"
+                "Intentionally skipped:\n"
+                "- <agent>: <why it was not needed>\n"
+                "Oracle synthesis:\n"
+                "<final answer>\n"
+                "Only list agents under Consulted if you actually used them.\n"
+                "Only list agents under Intentionally skipped if they were available but not needed.\n"
+                "Keep the synthesis understandable, concise, and honest about uncertainty."
             ),
             tools=[
                 AgentTool(astrology_remote),
@@ -79,18 +79,18 @@ class OrchestratorAgent:
             ],
         )
 
-        self._adk_session_service = InMemorySessionService()
+        self._session_service = InMemorySessionService()
         self._runner = Runner(
             app_name="orchestrator_adk",
             agent=self._coordinator_agent,
-            session_service=self._adk_session_service,
+            session_service=self._session_service,
         )
         self._adk_user_id = os.getenv("ORCHESTRATOR_ADK_USER_ID", "local_user")
 
     async def get_orchestrated_response(self, user_query: str) -> str:
         logger.info("orchestrator request received: %s", user_query)
         session_id = str(uuid.uuid4())
-        await self._adk_session_service.create_session(
+        await self._session_service.create_session(
             app_name=self._runner.app_name,
             user_id=self._adk_user_id,
             session_id=session_id,
@@ -111,9 +111,6 @@ class OrchestratorAgent:
                 if chunks:
                     last_text = "\n".join(chunks)
 
-        resolved = (
-                last_text
-                or "Orchestrator produced no text output."
-        )
+        resolved = last_text or "Orchestrator produced no text output."
         logger.info("orchestrator response produced: %s", resolved)
         return resolved

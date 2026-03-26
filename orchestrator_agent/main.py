@@ -19,8 +19,8 @@ def build_agent_card(agent_url: str) -> AgentCard:
     return AgentCard(
         name="All-Seeing Oracle",
         description=(
-            "A multi-agent oracle that always consults astrology, web search, "
-            "and tarot remotes before returning one blended prophecy."
+            "A multi-agent oracle that selectively consults astrology, web search, "
+            "and tarot remotes when they fit the request before returning one blended prophecy."
         ),
         url=agent_url,
         version="0.1.0",
@@ -32,8 +32,8 @@ def build_agent_card(agent_url: str) -> AgentCard:
                 id="multi_agent_orchestration",
                 name="Oracle Synthesis",
                 description=(
-                    "Runs a three-signal ritual (astrology + web search + tarot) "
-                    "and fuses the results into one mysterious answer."
+                    "Chooses the relevant oracle signals (astrology, web search, tarot) "
+                    "and fuses them into one mysterious answer."
                 ),
                 tags=["oracle", "orchestration", "multi-agent", "synthesis"],
                 examples=[

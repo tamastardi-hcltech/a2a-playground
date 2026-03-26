@@ -45,11 +45,12 @@ class TarotAgentExecutor(AgentExecutor):
             num_cards = max(1, min(num_cards, 10))
             drawn_cards: set[str] = set()
             interpretations: list[tuple[str, str]] = []
+            rng = self.agent.build_rng(query)
 
             for index in range(1, num_cards + 1):
-                card = self.agent.draw_random_card()
+                card = self.agent.draw_random_card(rng)
                 while card in drawn_cards:
-                    card = self.agent.draw_random_card()
+                    card = self.agent.draw_random_card(rng)
                 drawn_cards.add(card)
                 if index > 1:
                     await asyncio.sleep(random.randint(delay_min, delay_max))

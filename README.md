@@ -99,6 +99,7 @@ Common:
 Orchestrator:
 
 - `ORCHESTRATOR_MODEL` (default `openai/gpt-5`)
+- `ORCHESTRATOR_INPUT_GATE_MODEL` (default `gpt-4o-mini`)
 - `ASTROLOGY_AGENT_URL` (default `http://127.0.0.1:8001`)
 - `WEB_SEARCH_AGENT_URL` (default `http://127.0.0.1:8000`)
 - `TAROT_AGENT_URL` (default `http://127.0.0.1:8002`)
@@ -108,7 +109,38 @@ Web search:
 - `SEARCH_MODEL` (default `gpt-5`)
 - `DDG_BACKEND` (default `duckduckgo`)
 
+## How The Demo Routes Work
+
+The orchestrator now uses the ADK remote-agent setup again, so the oracle itself chooses which downstream tools to call for a request instead of consulting every service by default.
+
+- `web_search_agent`: used for current events, external facts, release notes, or clearly web-backed questions
+- `astrology_agent`: used for sign, birth date, horoscope, or astrology-framed guidance
+- `tarot_agent`: used for reflective/oracle-style prompts, tarot requests, and open-ended guidance
+
+Examples:
+
+- "Find the latest TypeScript release notes" -> web search only
+- "Daily horoscope for 1993-08-12" -> astrology only
+- "Draw 3 cards for my project" -> tarot only
+- "How is my week looking? I am leo." -> astrology + tarot
+
+The final orchestrator answer includes:
+
+- which agents it consulted
+- which agents it intentionally skipped
+- any unavailable downstream signals
+- the final synthesized oracle answer
+
+## A2A Task Behavior
+
+This repo is meant to show the A2A task lifecycle across separate services.
+
+- The orchestrator emits `working` updates while it selects agents and calls each downstream service.
+- The tarot agent emits multiple `working` updates, one per card reveal, before its final `completed` message.
+- The orchestrator can emit `input-required` when astrology is selected and it needs a birth date that was not already provided.
+- The Streamlit UI shows the collected task progress in an "A2A task progress" section for each reply.
+
 ## Notes
 
 - This is a starter skeleton intended to be extended.
-- Outputs are plain text, no structured response schema.
+- Outputs are plain text and intentionally human-readable for demo purposes.

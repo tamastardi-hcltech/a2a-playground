@@ -1,27 +1,43 @@
 import logging
 import os
+from typing import Literal
 
 from a2a.server.agent_execution import AgentExecutor, RequestContext
 from a2a.server.events import EventQueue
 from a2a.server.tasks import TaskUpdater
-from a2a.types import DataPart, InternalError, Message, Part, Role, Task, TextPart, UnsupportedOperationError
+from a2a.types import (
+    DataPart,
+    InternalError,
+    Part,
+    Role,
+    Task,
+    TaskState,
+    TextPart,
+    UnsupportedOperationError,
+)
 from a2a.utils import new_agent_parts_message, new_agent_text_message, new_task
 from a2a.utils.errors import ServerError
+from a2a.utils.parts import get_data_parts
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
+from pydantic import BaseModel
 
 from orchestrator_agent.orchestrator import OrchestratorAgent
 
 logger = logging.getLogger(__name__)
 
 
+class BirthDateGateResult(BaseModel):
+    result: Literal["YES", "NO"]
+
+
 class OrchestratorAgentExecutor(AgentExecutor):
     def __init__(self) -> None:
         self.agent = OrchestratorAgent()
         self._input_gate_model = ChatOpenAI(
-            model=os.getenv("ORCHESTRATOR_INPUT_GATE_MODEL", "gpt-5-mini"),
+            model=os.getenv("ORCHESTRATOR_INPUT_GATE_MODEL", "gpt-4o-mini"),
             temperature=0,
-        )
+        ).with_structured_output(BirthDateGateResult)
 
     async def execute(self, context: RequestContext, event_queue: EventQueue):
         query = context.get_user_input()
@@ -68,6 +84,16 @@ class OrchestratorAgentExecutor(AgentExecutor):
                 await task_updater.requires_input(message=message, final=False)
                 return
 
+            await task_updater.update_status(
+                TaskState.working,
+                message=new_agent_text_message(
+                    "The oracle is deciding which remote signals matter for this request.",
+                    task.context_id,
+                    task.id,
+                ),
+                final=False,
+            )
+
             response = await self.agent.get_orchestrated_response(query)
             logger.info("orchestrator response produced: %s", response)
             message = new_agent_text_message(response, task.context_id, task.id)
@@ -86,24 +112,16 @@ class OrchestratorAgentExecutor(AgentExecutor):
         raise ServerError(error=UnsupportedOperationError())
 
     def _should_request_birth_date(self, query: str, task: Task | None) -> bool:
-        history_snippets: list[str] = []
-        if task and task.history:
-            for msg in task.history:
-                if msg.role != Role.user:
-                    continue
-                for part in msg.parts:
-                    if isinstance(part.root, TextPart):
-                        history_snippets.append(part.root.text)
-        history_text = "\n".join(history_snippets[-8:])
+        if self._is_birth_date_follow_up(task, query):
+            return False
 
+        history_text = self._get_user_history_text(task)
         system_prompt = (
             "You are a strict gatekeeper for an oracle orchestrator.\n"
-            "Decide if we must ask the user for birth date before proceeding.\n"
+            "Decide whether the main oracle is likely to need astrology for this request.\n"
             "Return exactly one token: YES or NO.\n"
-            "Return YES only when:\n"
-            "- the request is personal guidance where astrology is relevant, and\n"
-            "- no birth date is present in the user conversation context.\n"
-            "Return NO for non-personal/general questions, or when birth date already exists."
+            "Return YES only when astrology is likely relevant and a birth date would materially improve the result.\n"
+            "Return NO for requests that can be handled without astrology."
         )
         user_prompt = (
             f"Conversation user history:\n{history_text or '(none)'}\n\n"
@@ -117,18 +135,46 @@ class OrchestratorAgentExecutor(AgentExecutor):
                     HumanMessage(content=user_prompt),
                 ]
             )
-            text = ""
-            if isinstance(result.content, str):
-                text = result.content
-            elif isinstance(result.content, list):
-                chunks = []
-                for item in result.content:
-                    if isinstance(item, dict):
-                        value = item.get("text")
-                        if isinstance(value, str):
-                            chunks.append(value)
-                text = "\n".join(chunks)
-            return text.strip().upper().startswith("YES")
+            return result.result == "YES"
         except Exception as exc:
             logger.warning("input gate model failed, defaulting to NO: %s", exc)
             return False
+
+    def _is_birth_date_follow_up(self, task: Task | None, query: str) -> bool:
+        if not task or not query.strip():
+            return False
+
+        status_message = getattr(getattr(task, "status", None), "message", None)
+        if status_message and self._message_requests_birth_date(status_message):
+            return True
+
+        if task.history:
+            for message in reversed(task.history):
+                if message.role != Role.agent:
+                    continue
+                if self._message_requests_birth_date(message):
+                    return True
+        return False
+
+    def _message_requests_birth_date(self, message) -> bool:
+        for payload in get_data_parts(message.parts):
+            if payload.get("type") != "input_required":
+                continue
+            fields = payload.get("required_fields")
+            if not isinstance(fields, list):
+                continue
+            for field in fields:
+                if isinstance(field, dict) and field.get("id") == "birth_date":
+                    return True
+        return False
+
+    def _get_user_history_text(self, task: Task | None) -> str:
+        history_snippets: list[str] = []
+        if task and task.history:
+            for msg in task.history:
+                if msg.role != Role.user:
+                    continue
+                for part in msg.parts:
+                    if isinstance(part.root, TextPart):
+                        history_snippets.append(part.root.text)
+        return "\n".join(history_snippets[-8:])
