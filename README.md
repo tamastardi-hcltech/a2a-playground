@@ -11,7 +11,7 @@ Minimal multi-agent A2A starter project.
 - `main.py`: root entrypoint
   - `serve` mode: runs orchestrator server
   - `ask` mode: sends one question to orchestrator as a client
-- `ui_app/streamlit_app.py`: minimal chat frontend for interacting with the orchestrator
+- `streamlit_ui/streamlit_app.py`: minimal chat frontend for interacting with the orchestrator
   - supports A2A `input-required` follow-up for missing astrology birth date
 - `angular/`: alternative Angular chat frontend with the same A2A capabilities
   - same chat flow, task continuity, progress updates, and follow-up input
@@ -53,7 +53,7 @@ uv run --env-file .env python main.py ask "How will my day look if I am a cancer
 6. Run Streamlit chat UI (optional)
 
 ```bash
-uv run --env-file .env streamlit run ui_app/streamlit_app.py
+uv run --env-file .env streamlit run streamlit_ui/streamlit_app.py
 ```
 
 7. Run Angular chat UI (optional)

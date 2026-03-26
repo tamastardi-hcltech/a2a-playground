@@ -115,10 +115,10 @@ services:
 
   oracle_ui:
     build:
-      context: ./ui_app
+      context: ./streamlit_ui
       dockerfile: Dockerfile
     container_name: oracle_ui
-    command: streamlit run ui_app/streamlit_app.py --server.address=0.0.0.0 --server.port=8501
+    command: streamlit run streamlit_ui/streamlit_app.py --server.address=0.0.0.0 --server.port=8501
     env_file:
       - ./.env
     environment:

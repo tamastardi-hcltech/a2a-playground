@@ -11,4 +11,4 @@ RUN pip install --no-cache-dir \
     httpx>=0.28.1 \
     streamlit>=1.44.0
 
-COPY . /app/ui_app
+COPY . /app/streamlit_ui
