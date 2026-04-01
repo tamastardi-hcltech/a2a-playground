@@ -2,6 +2,40 @@
 
 Minimal multi-agent A2A starter project.
 
+## Goals
+
+This project was built as a hands-on experiment, not just as an app.
+
+- Try Codex in a realistic coding workflow and see how far it could take a repo after the initial scaffolding.
+- Explore how A2A works across separate services, separate agent cards, and an orchestrator that chooses which remote
+  agents to consult.
+- Compare "human-authored core idea" work with "let Codex loose" work on the same codebase.
+- Learn what breaks, what composes well, and what kind of agent/UI behavior is easy to demo.
+
+The rough working style was:
+
+- I wrote the main direction, core structure, and key pieces of the project.
+- Then I let Codex expand the system and push on the edges of the idea.
+- Some parts were intentionally left as a stronger Codex experiment than others.
+- For example, I did not manually work on the Angular frontend, which makes it a useful artifact for seeing what Codex
+  produced on its own.
+
+## Capabilities Explored
+
+This repo is meant to exercise a bunch of A2A and agent-integration behaviors in one place:
+
+- Remote A2A agents exposed as separate services with their own agent cards
+- An ADK orchestrator that selectively calls downstream A2A agents instead of always consulting everything
+- Routing between multiple agent styles: astrology, tarot, and web-backed search
+- Streaming-style task progress updates across the A2A lifecycle
+- `input-required` follow-up flow when the orchestrator needs more data before continuing
+- Multi-step task continuity via `task_id` and `context_id`
+- Agent-card discovery and service-to-service communication over HTTP
+- LangChain-based tool use inside an A2A agent (`web_search_agent`)
+- ADK orchestrator behavior coordinating remote specialists
+- Comparison of two different frontend clients against the same backend task flow
+- Containerized deployment of each service to simulate separately deployed agents
+
 ## What is included
 
 - `web_search_agent`: A2A agent with LangChain + DuckDuckGo tool.
@@ -9,12 +43,12 @@ Minimal multi-agent A2A starter project.
 - `tarot_agent`: A2A streaming tarot agent with delayed card-by-card reveals.
 - `orchestrator_agent`: Google ADK agent that orchestrates remote A2A sub-agents.
 - `main.py`: root entrypoint
-  - `serve` mode: runs orchestrator server
-  - `ask` mode: sends one question to orchestrator as a client
+    - `serve` mode: runs orchestrator server
+    - `ask` mode: sends one question to orchestrator as a client
 - `streamlit_ui/streamlit_app.py`: minimal chat frontend for interacting with the orchestrator
-  - supports A2A `input-required` follow-up for missing astrology birth date
+    - supports A2A `input-required` follow-up for missing astrology birth date
 - `angular/`: alternative Angular chat frontend with the same A2A capabilities
-  - same chat flow, task continuity, progress updates, and follow-up input
+    - same chat flow, task continuity, progress updates, and follow-up input
 
 ## Quick start
 
@@ -122,7 +156,8 @@ Web search:
 
 ## How The Demo Routes Work
 
-The orchestrator now uses the ADK remote-agent setup again, so the oracle itself chooses which downstream tools to call for a request instead of consulting every service by default.
+The orchestrator now uses the ADK remote-agent setup again, so the oracle itself chooses which downstream tools to call
+for a request instead of consulting every service by default.
 
 - `web_search_agent`: used for current events, external facts, release notes, or clearly web-backed questions
 - `astrology_agent`: used for sign, birth date, horoscope, or astrology-framed guidance
@@ -148,7 +183,8 @@ This repo is meant to show the A2A task lifecycle across separate services.
 
 - The orchestrator emits `working` updates while it selects agents and calls each downstream service.
 - The tarot agent emits multiple `working` updates, one per card reveal, before its final `completed` message.
-- The orchestrator can emit `input-required` when astrology is selected and it needs a birth date that was not already provided.
+- The orchestrator can emit `input-required` when astrology is selected and it needs a birth date that was not already
+  provided.
 - The Streamlit UI shows the collected task progress in an "A2A task progress" section for each reply.
 - The Angular UI mirrors the same task lifecycle and follow-up flow for side-by-side comparison.
 
